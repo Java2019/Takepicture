@@ -4,15 +4,14 @@ package com.samples.camera.takepicture;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
+import android.hardware.Camera.PictureCallback;
+import android.hardware.Camera.ShutterCallback;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
+import android.view.*;
 import android.widget.ImageButton;
 import android.widget.Toast;
-import android.hardware.Camera.ShutterCallback;
-import android.hardware.Camera.PictureCallback;
+import android.view.ViewGroup.LayoutParams;
 
 public class CameraPreviewActivity extends AppCompatActivity
         implements View.OnClickListener, SurfaceHolder.Callback{
@@ -52,11 +51,25 @@ public class CameraPreviewActivity extends AppCompatActivity
         setContentView(R.layout.activity_camera_preview);
 
         surView = (SurfaceView)findViewById(R.id.surView);
+        holder = surView.getHolder();
+        holder.addCallback(this);
+
+        LayoutInflater inflater = LayoutInflater.from(getBaseContext());
+        View overlay = inflater.inflate(R.layout.overlay, null);
+        LayoutParams params = new LayoutParams(
+                LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
+        addContentView(overlay, params);
+
         bStart = (ImageButton)findViewById(R.id.bStart);
         bStop = (ImageButton)findViewById(R.id.bStop);
         bTake = (ImageButton)findViewById(R.id.bTake);
 
-        holder = Camera.Cal
+        bStart.setOnClickListener(this);
+        bStop.setOnClickListener(this);
+        bTake.setOnClickListener(this);
+
+        bTake.setEnabled(!isCameraPreview);
+        bStop.setEnabled(!isCameraPreview);
     }
 
     @Override
@@ -66,16 +79,23 @@ public class CameraPreviewActivity extends AppCompatActivity
                 try {
                     camera = Camera.open();
                     camera.setPreviewDisplay(holder);
-
+                    camera.startPreview();
+                    isCameraPreview = true;
+                    bStart.setEnabled(!isCameraPreview);
+                    bStop.setEnabled(isCameraPreview);
                 }catch (Exception e){
                     Toast.makeText(this, e.toString(), Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.bStop:
-
+                camera.stopPreview();
+                camera.release();
+                isCameraPreview = false;
+                bStart.setEnabled(!isCameraPreview);
+                bStop.setEnabled(isCameraPreview);
                 break;
             case R.id.bTake:
-
+                camera.takePicture(shutter, raw, jpg);
                 break;
         }
     }
@@ -92,6 +112,10 @@ public class CameraPreviewActivity extends AppCompatActivity
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-
+        if (isCameraPreview) {
+            camera.stopPreview();
+            camera.release();
+            isCameraPreview = false;
+        }
     }
 }
