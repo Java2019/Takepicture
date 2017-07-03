@@ -6,12 +6,16 @@ import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
+import android.hardware.Camera.AutoFocusCallback;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageButton;
 import android.widget.Toast;
-import android.view.ViewGroup.LayoutParams;
 
 public class CameraPreviewActivity extends AppCompatActivity
         implements View.OnClickListener, SurfaceHolder.Callback{
@@ -44,7 +48,13 @@ public class CameraPreviewActivity extends AppCompatActivity
             bStop.setEnabled(isCameraPreview);
         }
     };
-
+    private AutoFocusCallback autoFocusCallback = new AutoFocusCallback(){
+        @Override
+        public void onAutoFocus(boolean arg0, Camera arg1) {
+        // Когда фокус настроен, разблокируем кнопку
+            bTake.setEnabled(true);
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,6 +91,7 @@ public class CameraPreviewActivity extends AppCompatActivity
                     camera.setPreviewDisplay(holder);
                     camera.startPreview();
                     isCameraPreview = true;
+                    camera.autoFocus(autoFocusCallback);
                     bStart.setEnabled(!isCameraPreview);
                     bStop.setEnabled(isCameraPreview);
                 }catch (Exception e){
